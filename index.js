@@ -75,7 +75,7 @@ client.on('messageCreate', async (message) => {
     }
 });
 
-// 2. MONITOR DO CRONÔMETRO DE PRODUTIVIDADE INDIVIDUAL (UX LIMPA)
+// 2. MONITOR DO CRONÔMETRO DE PRODUTIVIDADE INDIVIDUAL (RESOLVIDO)
 client.on('interactionCreate', async (interaction) => {
     if (!interaction.isButton()) return;
 
@@ -91,27 +91,35 @@ client.on('interactionCreate', async (interaction) => {
             return;
         }
 
-        // Resposta efêmera (apenas o aluno vê) para indicar o início imediato
+        // Resposta efêmera oficial inicial para dar baixa na interação com a API do Discord
         await interaction.reply({ 
-            content: `▶️ **Pomodoro Iniciado!** Bons estudos, <@${alunoId}>. O bot te notificará publicamente quando o ciclo terminar. Força!`, 
+            content: `▶️ **Pomodoro Iniciado!** Bons estudos, <@${alunoId}>. O bot te notificará aqui na sala quando o ciclo terminar. Força!`, 
             ephemeral: true 
         });
 
         const tempoFoco = 10000; // 10 segundos para fins de simulação e testes rápidos do grupo
 
         setTimeout(async () => {
-            // Emite o embed público alertando a conclusão do bloco e o início do descanso
-            const concluidoEmbed = new EmbedBuilder()
-                .setColor('#2ECC71')
-                .setTitle('🎉 Ciclo Concluído!')
-                .setDescription(`Parabéns, <@${alunoId}>! Você concluiu seus **25 minutos** de estudo focado.\n\n☕ **Hora do Descanso:** Faça uma pausa de **5 minutos** para esticar as pernas e tomar uma água antes do próximo bloco.`)
-                .setFooter({ text: 'Mantenha a constância em suas matérias digitais!' })
-                .setTimestamp();
-            
-            const messageAlerta = await interaction.channel.send({ content: `🔔 **Notificação de Horário:** <@${alunoId}>`, embeds: [concluidoEmbed] });
-            
-            // 🔥 AUTO-DELETE: Remove o card em 15 segundos para manter o canal #🤖・comandos-bot limpo e focado
-            setTimeout(() => messageAlerta.delete().catch(() => null), 15000);
+            try {
+                const concluidoEmbed = new EmbedBuilder()
+                    .setColor('#2ECC71')
+                    .setTitle('🎉 Ciclo Concluído!')
+                    .setDescription(`Parabéns, <@${alunoId}>! Você concluiu seus **25 minutos** de estudo focado.\n\n☕ **Hora do Descanso:** Faça uma pausa de **5 minutos** para esticar as pernas e tomar uma água antes do próximo bloco.`)
+                    .setFooter({ text: 'Mantenha a constância em suas matérias digitais!' })
+                    .setTimestamp();
+                
+                // ✅ CORREÇÃO AQUI: Usando followUp público para notificar o canal sem quebrar a interação original
+                const messageAlerta = await interaction.followUp({ 
+                    content: `🔔 **Notificação de Horário:** <@${alunoId}>`, 
+                    embeds: [concluidoEmbed],
+                    ephemeral: false // Garante que a conclusão apareça publicamente na sala para a comunidade ver
+                });
+                
+                // 🔥 AUTO-DELETE: Remove o card em 15 segundos para manter a sala limpa
+                setTimeout(() => messageAlerta.delete().catch(() => null), 15000);
+            } catch (error) {
+                console.error("Erro ao enviar mensagem de conclusão:", error);
+            }
 
         }, tempoFoco);
     }
